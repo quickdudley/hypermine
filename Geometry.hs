@@ -1,7 +1,10 @@
 module Geometry () where
 
+--import Data.Monoid
 import Data.Number.Fixed
 import Data.Ratio
+
+data Axis = H | X | Y | Z deriving (Ord,Enum,Show,Read)
 
 data HyperPoint = HP (Fixed Prec50)
   (Fixed Prec50) (Fixed Prec50) (Fixed Prec50) deriving Show
@@ -9,6 +12,7 @@ data HyperPoint = HP (Fixed Prec50)
 data HyperLine = HL HyperPoint HyperPoint deriving Show
 
 hyperPoint x y z = HP (sqrt (x^2 + y^2 + z^2 + 1)) x y z
+
 
 bilinear (HP h1 x1 y1 z1) (HP h2 x2 y2 z2) = h1*h2 - x1*x2 - y1*y2 - z1*z2
 
@@ -46,7 +50,8 @@ onLine (HL (HP h1 x1 y1 z1) (HP h2 x2 y2 z2)) (HP h x y z) = let
 axis a l = let
   x = sqrt ((cosh l)^2 - 1)
   in case a of
-    1 -> hyperPoint x 0 0
-    2 -> hyperPoint 0 x 0
-    3 -> hyperPoint 0 0 x
+    H -> hyperPoint 0 0 0
+    X -> hyperPoint x 0 0
+    Y -> hyperPoint 0 x 0
+    Z -> hyperPoint 0 0 x
 
