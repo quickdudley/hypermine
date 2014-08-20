@@ -30,6 +30,23 @@ quadratic p = bilinear p p
 
 distance x y = acosh (bilinear x y)
 
+edgeLength = let
+  a = pi / 4
+  c = 2 * pi / 5
+  in acosh ((cos c + (cos a)^2) / (sin a)^2)
+
+{-
+Calculating the edge length:
+1: The corners of each pentagon are right-angled
+2: If the pentagon is divided into 5 triangles: each triangle has 2 angles
+  of Π/4, and one of 2Π/5
+3: The relevant trigonometric formula is:
+  cosC = -cosA cosB + sinA sinB cosh c
+Substitute A for B because they are the same and rearranged:
+c = arcosh ((cos C + (cos A)^2) / (sin A)^2)
+c = arcosh ((cos 2Π/5 + (cos Π/4)^2) / (sin Π/4)^2)
+-}
+
 angle x y z = let
   a = distance x y
   b = distance x z
