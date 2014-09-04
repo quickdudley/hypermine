@@ -1,26 +1,28 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Geometry () where
 
 --import Data.Monoid
 import Data.Number.Fixed
 import Data.Ratio
 
-type Coord = Fixed Prec50
+import Data.Monoid
 
 data Axis = X | Y | Z deriving (Eq,Ord,Enum,Show,Read)
 
-data HyperPoint = HP Coord Coord Coord Coord deriving Show
+data HyperPoint c = HP c c c c deriving Show
 
-data HyperLine = HL HyperPoint HyperPoint deriving Show
+data HyperLine c = HL (HyperPoint c) (HyperPoint c) deriving Show
 
-data Isometry = HI
-  Coord Coord Coord Coord
-  Coord Coord Coord Coord
-  Coord Coord Coord Coord
-  Coord Coord Coord Coord
+data Isometry c = HI
+  c c c c
+  c c c c
+  c c c c
+  c c c c
 
 infixl 6 *>
-class Transformable t where
-  (*>) :: Isometry -> t -> t
+class Transformable t c where
+  (*>) :: Isometry c -> t c -> t c
 
 hyperPoint x y z = HP (sqrt (x^2 + y^2 + z^2 + 1)) x y z
 
@@ -30,6 +32,7 @@ quadratic p = bilinear p p
 
 distance x y = acosh (bilinear x y)
 
+edgeLength :: Floating a => a
 edgeLength = let
   a = pi / 4
   c = 2 * pi / 5
@@ -53,7 +56,7 @@ angle x y z = let
   c = distance y z
   in acos ((cosh a * cosh b - cosh c) / (sinh a * sinh b))
 
-joinPoints :: HyperPoint -> HyperPoint -> HyperLine
+joinPoints :: HyperPoint c -> HyperPoint c -> HyperLine c
 joinPoints = HL
 
 extrapolate (HL p2@(HP h2 x2 y2 z2) p1@(HP h1 x1 y1 z1)) a = let
@@ -81,17 +84,17 @@ axis a l = let
     Y -> hyperPoint 0 x 0
     Z -> hyperPoint 0 0 x
 
-instance Transformable HyperPoint where
+instance (Num c, Floating c) => Transformable HyperPoint c where
   (HI
     hh hx hy hz
     xh xx xy xz
     yh yx yy yz
-    zh zx zy zz) *> (HP h x y z)= hyperPoint
+    zh zx zy zz) *> (HP h x y z) = hyperPoint
       (xh * h + xx * x + xy * y + xz * z)
       (yh * h + yx * x + yy * y + yz * z)
       (zh * h + zx * x + zy * y + zz * z)
 
-instance Transformable Isometry where
+instance (Num c) => Transformable Isometry c where
   (HI
     hh1 hx1 hy1 hz1
     xh1 xx1 xy1 xz1
@@ -118,6 +121,11 @@ instance Transformable Isometry where
       (zh1*hy2 + zx1*xy2 + zy1*yy2 + zz1*zy2)
       (zh1*hz2 + zx1*xz2 + zy1*yz2 + zz1*zz2)
 
+instance (Num c) => Monoid (Isometry c) where
+  mempty = identity
+  mappend = (*>)
+
+identity :: (Num c) => Isometry c
 identity = HI
   1 0 0 0
   0 1 0 0
@@ -155,8 +163,47 @@ push d = case d of
   X -> pushx
   Y -> pushy
   Z -> pushz
-{-
-  +c 0 +s
-  0  1  0
-  +s 0 +c
--}
+
+rotateToXY :: (Num c, Floating c) =>
+  HyperPoint c -> (Isometry c, Isometry c)
+rotateToXY (HP h x y z) = let
+  l = sqrt (x ^ 2 + z ^ 2)
+  c = x / l
+  s = z / l
+  in (HI
+    1   0  0 0
+    0   c  0 s
+    0   0  1 0
+    0 (-s) 0 c,
+   HI
+    1 0 0   0
+    0 c 0 (-s)
+    0 0 1   0
+    0 s 0   c
+   )
+
+rotateToXZ :: (Num c, Floating c) =>
+  HyperPoint c -> (Isometry c, Isometry c)
+rotateToXZ (HP h x y z) = let
+  l = sqrt (x ^ 2 + y ^ 2)
+  c = x / l
+  s = y / l
+  in (HI
+    1   0  0 0
+    0   c  s 0
+    0 (-s) c 0
+    0   0  0 1,
+   HI
+    1 0   0  0
+    0 c (-s) 0
+    0 s   c  0
+    0 0   0  1
+   )
+
+rotateToX :: (Num c, Floating c) =>
+  HyperPoint c -> (Isometry c, Isometry c)
+rotateToX p = let
+  (rt1,rf1) = rotateToXY p
+  (rt2,rf2) = rotateToXZ (rt1 *> p)
+  in (rt2 *> rt1, rf1 *> rf2)
+
