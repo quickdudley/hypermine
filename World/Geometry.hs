@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Geometry () where
+module World.Geometry () where
 
 --import Data.Monoid
 import Data.Number.Fixed
@@ -207,3 +207,18 @@ rotateToX p = let
   (rt2,rf2) = rotateToXZ (rt1 *> p)
   in (rt2 *> rt1, rf1 *> rf2)
 
+{-
+Define vertical as perpendicular to the plane at z = 0
+
+Step 1: find the point where z = 0 with minimum distance from original point
+d = acosh (h * sqrt (x'^2 + y'^2 + 1) - x*x' - y*y')
+dd/dx' = 1/sqrt(h*sqrt (x'^2 + y'^2 + 1) - x*x' - y*y' - 1) *
+  (2hx' / 2*sqrt (x'^2 + y'^2 + 1) - x)
+dd/dy' = 1/sqrt(h*sqrt (x'^2 + y'^2 + 1) - x*x' - y*y' - 1) *
+  (2hy' / 2*sqrt (x'^2 + y'^2 + 1) - y)
+dd/dx' = dd/dy' = 0
+0 = 2hx' /
+  (sqrt(h*sqrt (x'^2 + y'^2 + 1) - x*x' - y*y' - 1) * 2*sqrt (x'^2 + y'^2 + 1) - x)
+2hx' / x = 2hx' / sqrt (h * sqrt((x'^2 + y'^2 + 1) - x*x' - y*y' - 1) * (x'^2 + y'^2 + 1))
+ 
+-}
